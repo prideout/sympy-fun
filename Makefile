@@ -4,12 +4,13 @@ LIBS=-lX11 -lGL -lpng
 DEMOS=\
 	Spiral-Jacob \
 	Spiral-Simple \
+	Spiral-Wavy \
 
 SHARED=pez.o bstrlib.o pez.linux.o
 PREFIX=
 
-run: Spiral-Simple
-	./Spiral-Simple
+run: Spiral-Wavy
+	./Spiral-Wavy
 
 all: $(DEMOS)
 
