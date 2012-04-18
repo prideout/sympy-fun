@@ -35,7 +35,7 @@ def NormalFunc(f):
 r, R = symbols('r R')
 positions = VVF(cos(u), sin(u), 0)
 normals = VVF(cos(u), sin(u), 0)
-crossSection = VVF(0, R + r*cos(v), r*sin(v))
+crossSection = VVF(R + r*cos(v), 0, r*sin(v))
 torus = Sweep(positions, normals, crossSection)
 normals = NormalFunc(torus)
 
