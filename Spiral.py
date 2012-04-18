@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from sympy import *
 from sympy.matrices import *
 from sympy.functions import sin,cos
