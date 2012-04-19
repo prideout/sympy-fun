@@ -5,12 +5,13 @@ DEMOS=\
 	Spiral-Jacob \
 	Spiral-Simple \
 	Spiral-Wavy \
+	Torus \
 
 SHARED=pez.o bstrlib.o pez.linux.o
 PREFIX=
 
-run: Spiral-Wavy
-	./Spiral-Wavy
+run: Torus
+	./Torus
 
 all: $(DEMOS)
 
