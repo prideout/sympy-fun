@@ -46,7 +46,7 @@ static void CreateTorus(float major, float minor, int slices, int stacks)
 
     GLfloat* position = positions;
     for (int slice = 0; slice < slices; slice++) {
-        float v = slice * TwoPi / slices;
+        float v = slice * TwoPi / (slices - 1);
         for (int stack = 0; stack < stacks; stack++) {
             float u = stack * TwoPi / (stacks - 1);
             *position++ = v;
