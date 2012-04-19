@@ -33,7 +33,7 @@ PezConfig PezGetConfig()
     return config;
 }
 
-static void CreateTorus(float major, float minor, int slices, int stacks)
+static void CreateTorus(int slices, int stacks)
 {
     GLuint vao;
     glGenVertexArrays(1, &vao);
@@ -89,14 +89,13 @@ void PezInitialize()
     LoadProgram("VS", "TCS", "TES", "GS", "FS");
 
     PezConfig cfg = PezGetConfig();
-    const float h = 1.5f;
-    const float w = h * cfg.Width / cfg.Height;
-    const float z[2] = {65, 90};
-    Scene.Projection = M4MakeFrustum(-w, w, -h, h, z[0], z[1]);
+    const float z[2] = {5, 90};
+    const float fov = 0.55;
+    float aspect = (float) cfg.Width / cfg.Height;
+    Scene.Projection = M4MakePerspective(fov, aspect, z[0], z[1]);
 
-    const float MajorRadius = 8.0f, MinorRadius = 2.0f;
     const int Slices = 8, Stacks = 4;
-    CreateTorus(MajorRadius, MinorRadius, Slices, Stacks);
+    CreateTorus(Slices, Stacks);
     Scene.Time = 0;
 
     glEnable(GL_DEPTH_TEST);
@@ -111,8 +110,10 @@ void PezUpdate(float seconds)
     float theta = Scene.Time * RadiansPerSecond;
    
     // Create the model-view matrix:
-    Scene.ModelMatrix = M4MakeRotationZ(theta);
-    Point3 eye = {0, -50, 50};
+    //Scene.ModelMatrix = M4MakeRotationX(theta);
+    Scene.ModelMatrix = M4MakeRotationZYX((Vector3){theta, theta, theta});
+
+    Point3 eye = {0, -5, 5};
     Point3 target = {0, 0, 0};
     Vector3 up = {0, 1, 0};
     Scene.ViewMatrix = M4MakeLookAt(eye, target, up);
