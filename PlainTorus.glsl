@@ -15,7 +15,7 @@ void main()
 
 -- TCS
 
-uniform float TessLevel = 16;
+uniform float TessLevel = 12;
 
 layout(vertices = 3) out;
 in vec2 vPosition[];
@@ -41,30 +41,20 @@ uniform mat4 Modelview;
 const float R = 1.5;
 const float r = 0.25;
 
-// Ridge frequency and height:
-const float f = 20;
-const float h = 0.05;
-
 // u and v in [0,2π] 
 vec3 TorusPosition(float u, float v)
 {
-    float x = (R + h*sin(f*u)*cos(v) + r*cos(v))*cos(u);
-    float y = (R + h*sin(f*u)*cos(v) + r*cos(v))*sin(u);
-    float z = (h*sin(f*u) + r)*sin(v);
+    float x = (R + r*cos(v))*cos(u);
+    float y = (R + r*cos(v))*sin(u);
+    float z = r*sin(v);
     return vec3(x, y, z);
 }
 
 vec3 TorusNormal(float u, float v)
 {
-    float sv2 = sin(v)*sin(v);
-    float su2 = sin(u)*sin(u);
-    float cu2 = cos(u)*cos(u);
-    float cfu2 = cos(f*u)*cos(f*u);
-    float h2 = h*h;
-    float r2 = r*r;
-    float x = f*h*(h*sin(f*u) + r)*(su2 + cu2)*sin(u)*sv2*cos(f*u) + (h*sin(f*u) + r)*(f*h*sin(u)*cos(v)*cos(f*u) + (R + (h*sin(f*u) + r)*cos(v))*cos(u))*(su2 + cu2)*cos(v);
-    float y = -f*h*(h*sin(f*u) + r)*(su2 + cu2)*sv2*cos(u)*cos(f*u) - (h*sin(f*u) + r)*(f*h*cos(u)*cos(v)*cos(f*u) - (R + (h*sin(f*u) + r)*cos(v))*sin(u))*(su2 + cu2)*cos(v);
-    float z = (R*h*sin(f*u) + R*r - h2*su2*cos(v)*cfu2 + h2*su2*cos(v) - h2*cu2*cos(v)*cfu2 + h2*cu2*cos(v) + 2*h*r*sin(f*u)*cos(v) + r2*cos(v))*sin(v);
+    float x = r*(R + r*cos(v))*cos(u)*cos(v);
+    float y = r*(R + r*cos(v))*sin(u)*cos(v);
+    float z = r*(R + r*cos(v))*sin(v);
     return normalize(vec3(x, y, z));
 }
 

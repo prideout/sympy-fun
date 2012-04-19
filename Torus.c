@@ -94,7 +94,7 @@ void PezInitialize()
     float aspect = (float) cfg.Width / cfg.Height;
     Scene.Projection = M4MakePerspective(fov, aspect, z[0], z[1]);
 
-    const int Slices = 8, Stacks = 4;
+    const int Slices = 16, Stacks = 3;
     CreateTorus(Slices, Stacks);
     Scene.Time = 0;
 
