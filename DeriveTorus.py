@@ -22,8 +22,8 @@ def Sweep(curvePositions, curveNormals, crossSection):
     """The first two arguments are functions of u"""
     """The crossSection should be a function of v"""
     curveTangents = DVVF(curvePositions,u)
-    curveBinormals = curveTangents.cross(curveNormals).transpose()
-    curveBasis = (curveNormals.row_join(curveTangents).row_join(curveBinormals)).transpose()
+    curveBinormals = curveNormals.cross(curveTangents).transpose()
+    curveBasis = (curveNormals.row_join(curveTangents).row_join(curveBinormals))
     return curveBasis * crossSection
 def NormalFunc(f):
     """Takes a vector-valued function of u and v"""
