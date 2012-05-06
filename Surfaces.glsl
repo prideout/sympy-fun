@@ -158,6 +158,32 @@ void main()
     float sf = max(0.0, dot(N, H));
     sf = pow(sf, Shininess);
 
+    const bool Toon = false;
+    if (Toon) {
+        const float A = 0.1;
+        const float B = 0.3;
+        const float C = 0.6;
+        const float D = 1.0;
+	    float E = fwidth(df);
+        if (df > A - E && df < A + E)
+            df = mix(A, B, smoothstep(A - E, A + E, df));
+        else if (df > B - E && df < B + E)
+            df = mix(B, C, smoothstep(B - E, B + E, df));
+        else if (df > C - E && df < C + E)
+            df = mix(C, D, smoothstep(C - E, C + E, df));
+        else if (df < A) df = 0.0;
+        else if (df < B) df = B;
+        else if (df < C) df = C;
+        else df = D;
+ 
+	    E = fwidth(sf);
+        if (sf > 0.5 - E && sf < 0.5 + E) {
+            sf = clamp(0.5 * (sf - 0.5 + E) / E, 0.0, 1.0);
+        } else {
+            sf = step(0.5, sf);
+        }
+    }
+
     vec3 P = gPosition;
     vec3 I = normalize(P);
     float cosTheta = abs(dot(I, N));
@@ -168,7 +194,9 @@ void main()
     if (gl_FrontFacing)
         lighting += sf * SpecularMaterial;
 
-    lighting += fresnel;
+    if (!Toon) {
+        lighting += fresnel;
+    }
 
     FragColor = vec4(lighting,1);
 }

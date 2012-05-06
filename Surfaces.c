@@ -22,6 +22,8 @@ static void CreatePng(const char* filename, int w, int h, const unsigned char* d
 #define OpenGLError GL_NO_ERROR == glGetError(),                        \
         "%s:%d - OpenGL Error - %s", __FILE__, __LINE__, __FUNCTION__   \
 
+static const bool TakeScreenshots = false;
+
 PezConfig PezGetConfig()
 {
     PezConfig config;
@@ -54,9 +56,9 @@ void PezUpdate(float seconds)
     const float RadiansPerSecond = 0.75f;
     Scene.Time += seconds;
     float theta = Scene.Time * RadiansPerSecond;
-
-    // Uncomment for a nice screenshot
-    theta = -0.25;
+    if (TakeScreenshots) {
+        theta = -0.25;
+    }
    
     // Create the model-view matrix:
     Scene.ModelMatrix = M4MakeRotationZYX((Vector3){theta, theta, theta});
@@ -108,7 +110,7 @@ void PezRender()
     if (indices[surfaceFunc] != surface) {
         indices[surfaceFunc] = surface;
         glUniformSubroutinesuiv(stage, 1, indices);
-        takeScreenshot = true;
+        takeScreenshot = TakeScreenshots;
     }
 
     // Clear and draw:
