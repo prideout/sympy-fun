@@ -101,6 +101,7 @@ vec3 SuperellipseMobiusSurface(float u, float v)
 -- GS
 
 out vec3 gNormal;
+out vec3 gPosition;
 in vec3 tePosition[3];
 in vec3 teNormal[3];
 
@@ -112,6 +113,7 @@ void main()
 {
     for (int i = 0; i < 3; i++) {
         gNormal = NormalMatrix * teNormal[i];
+        gPosition = tePosition[i];
         gl_Position = gl_in[i].gl_Position;
         EmitVertex();
     }
@@ -121,6 +123,7 @@ void main()
 -- FS
 
 in vec3 gNormal;
+in vec3 gPosition;
 out vec4 FragColor;
 
 uniform vec3 LightPosition = vec3(0.25, 0.25, 1.0);
@@ -144,10 +147,17 @@ void main()
     float sf = max(0.0, dot(N, H));
     sf = pow(sf, Shininess);
 
+    vec3 P = gPosition;
+    vec3 I = normalize(P);
+    float cosTheta = abs(dot(I, N));
+    float fresnel = 1.0 - clamp(pow(1.0 - cosTheta, 0.125), 0, 1);
+
     vec3 color = !gl_FrontFacing ? FrontMaterial : BackMaterial;
     vec3 lighting = AmbientMaterial + df * color;
     if (gl_FrontFacing)
         lighting += sf * SpecularMaterial;
+
+    lighting += fresnel;
 
     FragColor = vec4(lighting,1);
 }
