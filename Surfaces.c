@@ -11,7 +11,6 @@ struct SceneParameters {
     Matrix4 ViewMatrix;
     Matrix4 ModelMatrix;
     Matrix3 NormalMatrix;
-    GLfloat PackedNormalMatrix[9];
 } Scene;
 
 static GLuint LoadProgram(const char* vsKey, const char* tcsKey, const char* tesKey, const char* gsKey, const char* fsKey);
@@ -119,8 +118,6 @@ void PezUpdate(float seconds)
     Scene.ViewMatrix = M4MakeLookAt(eye, target, up);
     Scene.Modelview = M4Mul(Scene.ViewMatrix, Scene.ModelMatrix);
     Scene.NormalMatrix = M4GetUpper3x3(Scene.Modelview);
-    for (int i = 0; i < 9; ++i)
-        Scene.PackedNormalMatrix[i] = M3GetElem(Scene.NormalMatrix, i/3, i%3);
 }
 
 void PezRender()
@@ -129,13 +126,33 @@ void PezRender()
     float* pView = (float*) &Scene.ViewMatrix;
     float* pModelview = (float*) &Scene.Modelview;
     float* pProjection = (float*) &Scene.Projection;
-    float* pNormalMatrix = &Scene.PackedNormalMatrix[0];
+    float* pNormalMatrix = (float*) &Scene.NormalMatrix;
     glUniformMatrix4fv(u("ViewMatrix"), 1, 0, pView);
     glUniformMatrix4fv(u("ModelMatrix"), 1, 0, pModel);
     glUniformMatrix4fv(u("Modelview"), 1, 0, pModelview);
     glUniformMatrix4fv(u("Projection"), 1, 0, pProjection);
     glUniformMatrix3fv(u("NormalMatrix"), 1, 0, pNormalMatrix);
     glUniform1f(u("Time"), Scene.Time);
+
+    GLenum prog = CurrentProgram();
+    GLenum stage = GL_TESS_EVALUATION_SHADER;
+
+    GLuint surfaceFunc = glGetSubroutineUniformLocation(prog, stage, "SurfaceFunc");
+    GLuint simpleTorusSurface = glGetSubroutineIndex(prog, stage, "SimpleTorusSurface");
+
+    GLuint normalFunc = glGetSubroutineUniformLocation(prog, stage, "NormalFunc");
+    GLuint simpleTorusNormals = glGetSubroutineIndex(prog, stage, "SimpleTorusNormal");
+
+    // Make sure there are two subroutines we can pick:
+    int activeCount;
+    glGetProgramStageiv(prog, stage, GL_ACTIVE_SUBROUTINE_UNIFORM_LOCATIONS, &activeCount);
+    pezCheck(activeCount == 2);
+
+    // This sets per-context state:
+    GLuint indices[2];
+    indices[surfaceFunc] = simpleTorusSurface;
+    indices[normalFunc] = simpleTorusNormals;
+    glUniformSubroutinesuiv(stage, 2, indices);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPatchParameteri(GL_PATCH_VERTICES, 3);

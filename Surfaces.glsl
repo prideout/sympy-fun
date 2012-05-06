@@ -3,11 +3,6 @@
 in vec2 Position;
 out vec2 vPosition;
 
-uniform mat4 Projection;
-uniform mat4 Modelview;
-uniform mat4 ViewMatrix;
-uniform mat4 ModelMatrix;
-
 void main()
 {
     vPosition = Position;
@@ -45,8 +40,12 @@ const float r = 0.25;
 const float f = 20;
 const float h = 0.05;
 
-// u and v in [0,2π] 
-vec3 TorusPosition(float u, float v)
+subroutine vec3 ParametricFunction(float u, float v);
+subroutine uniform ParametricFunction SurfaceFunc;
+subroutine uniform ParametricFunction NormalFunc;
+
+subroutine(ParametricFunction)
+vec3 SimpleTorusSurface(float u, float v)
 {
     float x = (-R - r*cos(v))*cos(u);
     float y = (-R - r*cos(v))*sin(u);
@@ -54,7 +53,8 @@ vec3 TorusPosition(float u, float v)
     return vec3(x, y, z);
 }
 
-vec3 TorusNormal(float u, float v)
+subroutine(ParametricFunction)
+vec3 SimpleTorusNormal(float u, float v)
 {
     float x = r*(-R - r*cos(v))*cos(u)*cos(v);
     float y = r*(-R - r*cos(v))*sin(u)*cos(v);
@@ -69,8 +69,8 @@ void main()
     vec2 p2 = gl_TessCoord.z * tcPosition[2];
     vec2 p = (p0 + p1 + p2);
 
-    tePosition = TorusPosition(p.x, p.y);
-    teNormal = TorusNormal(p.x, p.y);
+    tePosition = SurfaceFunc(p.x, p.y);
+    teNormal = NormalFunc(p.x, p.y);
 
     gl_Position = Projection * Modelview * vec4(tePosition, 1);
 }
