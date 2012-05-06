@@ -1,8 +1,13 @@
 #!/usr/bin/python
 
-from sympy import diff, simplify, symbols
+from sympy import diff, simplify, symbols, trigsimp
 from sympy.matrices import *
 from sympy.functions import sin,cos
+import sys
+
+def Progress():
+    sys.stdout.write('.')
+    sys.stdout.flush()
 
 # Vector-valued function utilities:
 def VVF(*args):
@@ -13,6 +18,7 @@ def Simplify(m):
     m.simplify()
     return m
 def Normalized(m):
+    m = Simplify(m)
     return Simplify(m / simplify(m.norm()))
 
 u, v = symbols('u v', positive=True)
@@ -28,15 +34,24 @@ def Sweep(sweepCurve, crossSection):
 
     # Perform Gram-Schmidt orthogonalization:
     # Does NOT assume the sweep is an arc-length parameterization.
+    Progress()
     t = Normalized(d)
+    Progress()
     n = Normalized(dd - t * dd.dot(t))
+    Progress()
     b = Normalized(t.cross(n).transpose())
+    Progress()
 
     # Formulate the Frenet Frame:
     curveBasis = t.row_join(n).row_join(b)
 
     # Transform the cross section to the curve's space:
-    return Simplify(sweepCurve + curveBasis * crossSection)
+    s = sweepCurve + curveBasis * crossSection
+
+    # Simplify and return:
+    s = Simplify(s)
+    print "."
+    return s
 
 def NormalFunc(f):
     """Takes a vector-valued function of u and v"""
