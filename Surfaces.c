@@ -126,7 +126,7 @@ void PezRender()
         int w = PezGetConfig().Width;
         int h = PezGetConfig().Height;
         unsigned char* data = (unsigned char*) malloc(w * h * 4);
-        glReadPixels(0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
+        glReadPixels(0, 0, w, h, GL_RGBA, GL_UNSIGNED_BYTE, data);
         CreatePng(names[sel], w, h, data);
         free(data);
     }
@@ -212,8 +212,53 @@ static GLuint LoadProgram(const char* vsKey, const char* tcsKey, const char* tes
     return programHandle;
 }
 
-static void CreatePng(const char* filename, int w, int h, const unsigned char* data)
+static void CreatePng(const char* base, int w, int h, const unsigned char* data)
 {
-    // png_write
+    FILE * fp;
+    png_structp png_ptr = NULL;
+    png_infop info_ptr = NULL;
+    size_t y;
+    png_byte ** row_pointers = NULL;
+    int depth = 8;
+
+    char filename[256];
+    sprintf(filename, "%s.png", base);
+    
+    fp = fopen(filename, "wb");
+    pezCheck(fp ? 1 : 0, "Unable to open %s", filename);
+
+    png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
+    pezCheck(png_ptr ? 1 : 0, "Unable to create PNG struct");
+    
+    info_ptr = png_create_info_struct (png_ptr);
+    pezCheck(info_ptr ? 1 : 0, "Unable to create PNG info");
+
+    if (setjmp (png_jmpbuf (png_ptr))) {
+        pezFatal("Unable to set errorhandler");
+    }
+    
+    png_set_IHDR (png_ptr,
+                  info_ptr,
+                  w,
+                  h,
+                  depth,
+                  PNG_COLOR_TYPE_RGBA,
+                  PNG_INTERLACE_NONE,
+                  PNG_COMPRESSION_TYPE_DEFAULT,
+                  PNG_FILTER_TYPE_DEFAULT);
+    
+    row_pointers = (png_byte**) png_malloc (png_ptr, h * sizeof (png_byte *));
+    for (y = 0; y < h; ++y) {
+        int row = h-1-y;
+        row_pointers[y] = (png_byte*) (data + row * w * 4);
+    }
+    
+    png_init_io (png_ptr, fp);
+    png_set_rows (png_ptr, info_ptr, row_pointers);
+    png_write_png (png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
+
+    png_free (png_ptr, row_pointers);
+    png_destroy_write_struct (&png_ptr, &info_ptr);
+    fclose (fp);
     pezPrintString("Wrote %s\n", filename);
 }
