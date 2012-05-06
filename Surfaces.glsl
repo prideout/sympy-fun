@@ -39,7 +39,6 @@ const float n = 3;
 
 subroutine vec3 ParametricFunction(float u, float v);
 subroutine uniform ParametricFunction SurfaceFunc;
-subroutine uniform ParametricFunction NormalFunc;
 
 void main()
 {
@@ -47,7 +46,13 @@ void main()
     uv.y = 1 - uv.y;
     vec2 p = uv * 2 * Pi;
     tePosition = SurfaceFunc(p.x, p.y);
-    teNormal = NormalFunc(p.x, p.y);
+
+    float du = 0.0001; float dv = 0.0001;
+    vec3 C = SurfaceFunc(p.x + du, p.y);
+    vec3 B = SurfaceFunc(p.x, p.y + dv);
+    vec3 A = tePosition;
+    teNormal = normalize(cross(C - A, B - A));
+
     gl_Position = Projection * Modelview * vec4(tePosition, 1);
 }
 
@@ -60,14 +65,6 @@ vec3 SimpleTorusSurface(float u, float v)
     float z = r*sin(v);
     return vec3(x, y, z);
 }
-subroutine(ParametricFunction)
-vec3 SimpleTorusNormal(float u, float v)
-{
-    float x = r*(-R - r*cos(v))*cos(u)*cos(v);
-    float y = r*(-R - r*cos(v))*sin(u)*cos(v);
-    float z = r*(R + r*cos(v))*sin(v);
-    return normalize(vec3(x, y, z));
-}
 
 // Ridged Torus
 subroutine(ParametricFunction)
@@ -77,14 +74,6 @@ vec3 RidgedTorusSurface(float u, float v)
     float y = R*sin(u) + (h*sin(f*u) + r)*sin(u)*cos(v);
     float z = (h*sin(f*u) + r)*sin(v);
     return vec3(x, y, z);
-}
-subroutine(ParametricFunction)
-vec3 RidgedTorusNormal(float u, float v)
-{
-    float x = -f*h*(h*sin(f*u) + r)*sin(u)*pow(cos(v), 2)*cos(f*u) + f*h*(h*sin(f*u) + r)*sin(u)*cos(f*u) + (h*sin(f*u) + r)*(R*cos(u) + f*h*sin(u)*cos(v)*cos(f*u) + (h*sin(f*u) + r)*cos(u)*cos(v))*cos(v);
-    float y = f*h*(h*sin(f*u) + r)*cos(u)*pow(cos(v), 2)*cos(f*u) - f*h*(h*sin(f*u) + r)*cos(u)*cos(f*u) + (-h*sin(f*u) - r)*(-R*sin(u) + f*h*cos(u)*cos(v)*cos(f*u) + (-h*sin(f*u) - r)*sin(u)*cos(v))*cos(v);
-    float z = (-h*sin(f*u) - r)*(-R*sin(u) + f*h*cos(u)*cos(v)*cos(f*u) + (-h*sin(f*u) - r)*sin(u)*cos(v))*sin(u)*sin(v) + (h*sin(f*u) + r)*(R*cos(u) + f*h*sin(u)*cos(v)*cos(f*u) + (h*sin(f*u) + r)*cos(u)*cos(v))*sin(v)*cos(u);
-    return normalize(vec3(x, y, z));
 }
 
 // Superellipse Torus
@@ -97,11 +86,6 @@ vec3 SuperellipseTorusSurface(float u, float v)
     float z = 0.5*pow(abs(sin(v)), 2/n)*sign(sin(v));
     return vec3(x, y, z);
 }
-subroutine(ParametricFunction)
-vec3 SuperellipseTorusNormal(float u, float v)
-{
-    return vec3(0, 0, 0); // TODO use forward differencing
-}
 
 // Superellipse Mobius
 subroutine(ParametricFunction)
@@ -112,11 +96,6 @@ vec3 SuperellipseMobiusSurface(float u, float v)
     float y = (1.0*R + 0.125*sin(u/2)*pow(abs(sin(v)), 2/n)*sign(sin(v)) + 0.5*cos(u/2)*pow(abs(cos(v)), 2/n)*sign(cos(v)))*sin(u);
     float z = -0.5*sin(u/2)*pow(abs(cos(v)), 2/n)*sign(cos(v)) + 0.125*cos(u/2)*pow(abs(sin(v)), 2/n)*sign(sin(v));
     return vec3(x, y, z);
-}
-subroutine(ParametricFunction)
-vec3  SuperellipseMobiusNormal(float u, float v)
-{
-    return vec3(0, 0, 0); // TODO use forward differencing
 }
 
 -- GS
@@ -131,13 +110,8 @@ layout(triangle_strip, max_vertices = 3) out;
 
 void main()
 {
-    vec3 A = tePosition[0];
-    vec3 B = tePosition[1];
-    vec3 C = tePosition[2];
-    gNormal = NormalMatrix * normalize(cross(B - A, C - A));
-
     for (int i = 0; i < 3; i++) {
-        //gNormal = NormalMatrix * teNormal[i];
+        gNormal = NormalMatrix * teNormal[i];
         gl_Position = gl_in[i].gl_Position;
         EmitVertex();
     }
@@ -170,7 +144,7 @@ void main()
     float sf = max(0.0, dot(N, H));
     sf = pow(sf, Shininess);
 
-    vec3 color = gl_FrontFacing ? FrontMaterial : BackMaterial;
+    vec3 color = !gl_FrontFacing ? FrontMaterial : BackMaterial;
     vec3 lighting = AmbientMaterial + df * color;
     if (gl_FrontFacing)
         lighting += sf * SpecularMaterial;

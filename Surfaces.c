@@ -82,32 +82,27 @@ void PezRender()
     glUniformMatrix3fv(u("NormalMatrix"), 1, 0, pNormalMatrix);
     glUniform1f(u("Time"), Scene.Time);
 
-    // Make sure there are two subroutines we can pick:
+    // Make sure there is a subroutine we can pick:
     GLenum prog = CurrentProgram();
     GLenum stage = GL_TESS_EVALUATION_SHADER;
     int activeCount;
     glGetProgramStageiv(prog, stage, GL_ACTIVE_SUBROUTINE_UNIFORM_LOCATIONS, &activeCount);
-    pezCheck(activeCount == 2);
+    pezCheck(activeCount == 1);
     GLuint surfaceFunc = glGetSubroutineUniformLocation(prog, stage, "SurfaceFunc");
-    GLuint normalFunc = glGetSubroutineUniformLocation(prog, stage, "NormalFunc");
 
-    // Pick the two subroutines:
-    GLuint indices[2];
+    // Pick the subroutine:
+    GLuint indices[1];
     float time = fmod(Scene.Time, 5);
     if (time < 1) {
         indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SimpleTorusSurface");
-        indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "SimpleTorusNormal");
     } else if (time < 2) {
         indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "RidgedTorusSurface");
-        indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "RidgedTorusNormal");
    } else if (time < 3) {
         indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SuperellipseTorusSurface");
-        indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "SuperellipseTorusNormal");
     } else {
         indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SuperellipseMobiusSurface");
-        indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "SuperellipseMobiusNormal");
     }
-    glUniformSubroutinesuiv(stage, 2, indices);
+    glUniformSubroutinesuiv(stage, 1, indices);
 
     // Clear and Render:
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
