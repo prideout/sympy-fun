@@ -15,6 +15,7 @@ struct SceneParameters {
 
 static GLuint LoadProgram(const char* vsKey, const char* tcsKey, const char* tesKey, const char* gsKey, const char* fsKey);
 static GLuint CurrentProgram();
+static void CreatePng(const char* filename, int w, int h, const unsigned char* data);
 
 #define u(x) glGetUniformLocation(CurrentProgram(), x)
 #define a(x) glGetAttribLocation(CurrentProgram(), x)
@@ -25,8 +26,8 @@ PezConfig PezGetConfig()
 {
     PezConfig config;
     config.Title = __FILE__;
-    config.Width = 800*3/2;
-    config.Height = 600*3/2;
+    config.Width = 800*2;
+    config.Height = 600*2;
     config.Multisampling = true;
     config.VerticalSync = true;
     return config;
@@ -42,7 +43,6 @@ void PezInitialize()
     Scene.Projection = M4MakePerspective(fov, aspect, z[0], z[1]);
     Scene.Time = 0;
     glEnable(GL_DEPTH_TEST);
-    glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
     GLuint vao;
     glGenVertexArrays(1, &vao);
     glBindVertexArray(vao);
@@ -54,9 +54,11 @@ void PezUpdate(float seconds)
     const float RadiansPerSecond = 0.75f;
     Scene.Time += seconds;
     float theta = Scene.Time * RadiansPerSecond;
+
+    // Uncomment for a nice screenshot
+    theta = -0.25;
    
     // Create the model-view matrix:
-    //Scene.ModelMatrix = M4MakeRotationX(theta);
     Scene.ModelMatrix = M4MakeRotationZYX((Vector3){theta, theta, theta});
 
     Point3 eye = {0, -5, 5};
@@ -91,23 +93,43 @@ void PezRender()
     GLuint surfaceFunc = glGetSubroutineUniformLocation(prog, stage, "SurfaceFunc");
 
     // Pick the subroutine:
-    GLuint indices[1];
     float time = fmod(Scene.Time, 5);
-    if (time < 1) {
-        indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SimpleTorusSurface");
-    } else if (time < 2) {
-        indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "RidgedTorusSurface");
-   } else if (time < 3) {
-        indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SuperellipseTorusSurface");
-    } else {
-        indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SuperellipseMobiusSurface");
+    const char* names[] = {
+        "SimpleTorusSurface",
+        "RidgedTorusSurface",
+        "SuperellipseTorusSurface",
+        "SuperellipseMobiusSurface",
+        "SpiralSurface"
+    };
+    int sel = ((int) time) % (sizeof(names) / sizeof(names[0]));
+    GLuint surface = glGetSubroutineIndex(prog, stage, names[sel]);
+    static GLuint indices[1];
+    bool takeScreenshot = false;
+    if (indices[surfaceFunc] != surface) {
+        indices[surfaceFunc] = surface;
+        glUniformSubroutinesuiv(stage, 1, indices);
+        takeScreenshot = true;
     }
-    glUniformSubroutinesuiv(stage, 1, indices);
 
-    // Clear and Render:
+    // Clear and draw:
+    if (takeScreenshot) {
+        glClearColor(0, 0, 0, 0);
+    } else {
+        glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPatchParameteri(GL_PATCH_VERTICES, 4);
     glDrawArrays(GL_PATCHES, 0, 256 * 4);
+
+    // Record a screenshot if desired:
+    if (takeScreenshot) {
+        int w = PezGetConfig().Width;
+        int h = PezGetConfig().Height;
+        unsigned char* data = (unsigned char*) malloc(w * h * 4);
+        glReadPixels(0, 0, w, h, GL_BGRA, GL_UNSIGNED_BYTE, data);
+        CreatePng(names[sel], w, h, data);
+        free(data);
+    }
 }
 
 static GLuint CurrentProgram()
@@ -188,4 +210,10 @@ static GLuint LoadProgram(const char* vsKey, const char* tcsKey, const char* tes
     pezCheck(linkSuccess, "Can't link shaders:\n%s", spew);
     glUseProgram(programHandle);
     return programHandle;
+}
+
+static void CreatePng(const char* filename, int w, int h, const unsigned char* data)
+{
+    // png_write
+    pezPrintString("Wrote %s\n", filename);
 }

@@ -98,6 +98,17 @@ vec3 SuperellipseMobiusSurface(float u, float v)
     return vec3(x, y, z);
 }
 
+// Spiral Shape
+subroutine(ParametricFunction)
+vec3 SpiralSurface(float u, float v)
+{
+    const float Alpha = 0.3;
+    float x = Alpha*(-v/(2*Pi) + 1)*(cos(u) + 1)*cos(2*v) + 0.1*cos(2*v);
+    float y = Alpha*(-v/(2*Pi) + 1)*(cos(u) + 1)*sin(2*v) + 0.1*sin(2*v);
+    float z = Alpha*(-v/(2*Pi) + 1)*sin(u) + v/(2*Pi);
+    return 2 * vec3(x, y, -z);
+}
+
 -- GS
 
 out vec3 gNormal;
