@@ -137,21 +137,23 @@ void PezRender()
     GLenum prog = CurrentProgram();
     GLenum stage = GL_TESS_EVALUATION_SHADER;
 
-    GLuint surfaceFunc = glGetSubroutineUniformLocation(prog, stage, "SurfaceFunc");
-    GLuint simpleTorusSurface = glGetSubroutineIndex(prog, stage, "SimpleTorusSurface");
-
-    GLuint normalFunc = glGetSubroutineUniformLocation(prog, stage, "NormalFunc");
-    GLuint simpleTorusNormals = glGetSubroutineIndex(prog, stage, "SimpleTorusNormal");
-
     // Make sure there are two subroutines we can pick:
     int activeCount;
     glGetProgramStageiv(prog, stage, GL_ACTIVE_SUBROUTINE_UNIFORM_LOCATIONS, &activeCount);
     pezCheck(activeCount == 2);
+    GLuint surfaceFunc = glGetSubroutineUniformLocation(prog, stage, "SurfaceFunc");
+    GLuint normalFunc = glGetSubroutineUniformLocation(prog, stage, "NormalFunc");
 
-    // This sets per-context state:
+    // Pick the two subroutines:
     GLuint indices[2];
-    indices[surfaceFunc] = simpleTorusSurface;
-    indices[normalFunc] = simpleTorusNormals;
+    float time = fmod(Scene.Time, 5);
+    if (time < 2.5) {
+        indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SimpleTorusSurface");
+        indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "SimpleTorusNormal");
+    } else {
+        indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "RidgedTorusSurface");
+        indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "RidgedTorusNormal");
+    }
     glUniformSubroutinesuiv(stage, 2, indices);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

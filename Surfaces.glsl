@@ -44,6 +44,7 @@ subroutine vec3 ParametricFunction(float u, float v);
 subroutine uniform ParametricFunction SurfaceFunc;
 subroutine uniform ParametricFunction NormalFunc;
 
+// Simple Torus
 subroutine(ParametricFunction)
 vec3 SimpleTorusSurface(float u, float v)
 {
@@ -52,13 +53,30 @@ vec3 SimpleTorusSurface(float u, float v)
     float z = r*sin(v);
     return vec3(x, y, z);
 }
-
 subroutine(ParametricFunction)
 vec3 SimpleTorusNormal(float u, float v)
 {
     float x = r*(-R - r*cos(v))*cos(u)*cos(v);
     float y = r*(-R - r*cos(v))*sin(u)*cos(v);
     float z = r*(R + r*cos(v))*sin(v);
+    return normalize(vec3(x, y, z));
+}
+
+// Ridged Torus
+subroutine(ParametricFunction)
+vec3 RidgedTorusSurface(float u, float v)
+{
+    float x = R*cos(u) + (h*sin(f*u) + r)*cos(u)*cos(v);
+    float y = R*sin(u) + (h*sin(f*u) + r)*sin(u)*cos(v);
+    float z = (h*sin(f*u) + r)*sin(v);
+    return vec3(x, y, z);
+}
+subroutine(ParametricFunction)
+vec3 RidgedTorusNormal(float u, float v)
+{
+    float x = -f*h*(h*sin(f*u) + r)*sin(u)*pow(cos(v), 2)*cos(f*u) + f*h*(h*sin(f*u) + r)*sin(u)*cos(f*u) + (h*sin(f*u) + r)*(R*cos(u) + f*h*sin(u)*cos(v)*cos(f*u) + (h*sin(f*u) + r)*cos(u)*cos(v))*cos(v);
+    float y = f*h*(h*sin(f*u) + r)*cos(u)*pow(cos(v), 2)*cos(f*u) - f*h*(h*sin(f*u) + r)*cos(u)*cos(f*u) + (-h*sin(f*u) - r)*(-R*sin(u) + f*h*cos(u)*cos(v)*cos(f*u) + (-h*sin(f*u) - r)*sin(u)*cos(v))*cos(v);
+    float z = (-h*sin(f*u) - r)*(-R*sin(u) + f*h*cos(u)*cos(v)*cos(f*u) + (-h*sin(f*u) - r)*sin(u)*cos(v))*sin(u)*sin(v) + (h*sin(f*u) + r)*(R*cos(u) + f*h*sin(u)*cos(v)*cos(f*u) + (h*sin(f*u) + r)*cos(u)*cos(v))*sin(v)*cos(u);
     return normalize(vec3(x, y, z));
 }
 
