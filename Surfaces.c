@@ -32,80 +32,27 @@ PezConfig PezGetConfig()
     return config;
 }
 
-static void CreateTorus(int slices, int stacks)
-{
-    GLuint vao;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-
-    int vertexCount = slices * stacks * 3;
-    int vertexStride = sizeof(float) * 2;
-    GLsizeiptr size = vertexCount * vertexStride;
-    GLfloat* positions = (GLfloat*) malloc(size);
-
-    GLfloat* position = positions;
-    for (int slice = 0; slice < slices; slice++) {
-        float v = slice * TwoPi / (slices - 1);
-        for (int stack = 0; stack < stacks; stack++) {
-            float u = stack * TwoPi / (stacks - 1);
-            *position++ = v;
-            *position++ = u;
-        }
-    }
-
-    GLuint handle;
-    glGenBuffers(1, &handle);
-    glBindBuffer(GL_ARRAY_BUFFER, handle);
-    glBufferData(GL_ARRAY_BUFFER, size, positions, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(a("Position"));
-    glVertexAttribPointer(a("Position"), 2, GL_FLOAT, GL_FALSE,
-                          vertexStride, 0);
-    free(positions);
-
-    Scene.IndexCount = (slices-1) * (stacks-1) * 6;
-    size = Scene.IndexCount * sizeof(GLushort);
-    GLushort* indices = (GLushort*) malloc(size);
-    GLushort* index = indices;
-    int v = 0;
-    for (int i = 0; i < slices - 1; i++) {
-        for (int j = 0; j < stacks - 1; j++) {
-            int next = j + 1;
-            *index++ = v+next+stacks; *index++ = v+next; *index++ = v+j;
-            *index++ = v+j; *index++ = v+j+stacks; *index++ = v+next+stacks;
-        }
-        v += stacks;
-    }
-
-    glGenBuffers(1, &handle);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, handle);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STATIC_DRAW);
-
-    free(indices);
-}
-
 void PezInitialize()
 {
     LoadProgram("VS", "TCS", "TES", "GS", "FS");
-
     PezConfig cfg = PezGetConfig();
     const float z[2] = {5, 90};
     const float fov = 0.55;
     float aspect = (float) cfg.Width / cfg.Height;
     Scene.Projection = M4MakePerspective(fov, aspect, z[0], z[1]);
-
-    const int Slices = 16, Stacks = 3;
-    CreateTorus(Slices, Stacks);
     Scene.Time = 0;
-
     glEnable(GL_DEPTH_TEST);
     glClearColor(0.2f, 0.2f, 0.2f, 1.0f);
+    GLuint vao;
+    glGenVertexArrays(1, &vao);
+    glBindVertexArray(vao);
+    pezCheck(OpenGLError);
 }
 
 void PezUpdate(float seconds)
 {
     const float RadiansPerSecond = 0.75f;
     Scene.Time += seconds;
-
     float theta = Scene.Time * RadiansPerSecond;
    
     // Create the model-view matrix:
@@ -122,6 +69,7 @@ void PezUpdate(float seconds)
 
 void PezRender()
 {
+    // Set up uniforms:
     float* pModel = (float*) &Scene.ModelMatrix;
     float* pView = (float*) &Scene.ViewMatrix;
     float* pModelview = (float*) &Scene.Modelview;
@@ -134,10 +82,9 @@ void PezRender()
     glUniformMatrix3fv(u("NormalMatrix"), 1, 0, pNormalMatrix);
     glUniform1f(u("Time"), Scene.Time);
 
+    // Make sure there are two subroutines we can pick:
     GLenum prog = CurrentProgram();
     GLenum stage = GL_TESS_EVALUATION_SHADER;
-
-    // Make sure there are two subroutines we can pick:
     int activeCount;
     glGetProgramStageiv(prog, stage, GL_ACTIVE_SUBROUTINE_UNIFORM_LOCATIONS, &activeCount);
     pezCheck(activeCount == 2);
@@ -156,9 +103,10 @@ void PezRender()
     }
     glUniformSubroutinesuiv(stage, 2, indices);
 
+    // Clear and Render:
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glPatchParameteri(GL_PATCH_VERTICES, 3);
-    glDrawElements(GL_PATCHES, Scene.IndexCount, GL_UNSIGNED_SHORT, 0);
+    glPatchParameteri(GL_PATCH_VERTICES, 4);
+    glDrawArrays(GL_PATCHES, 0, 256 * 4);
 }
 
 static GLuint CurrentProgram()

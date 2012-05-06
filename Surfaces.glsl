@@ -1,33 +1,30 @@
 -- VS
 
-in vec2 Position;
-out vec2 vPosition;
-
+out vec2 vGridCoord;
 void main()
 {
-    vPosition = Position;
+    int i = gl_VertexID / 4;
+    vGridCoord = vec2(i / 16, i % 16);
 }
 
 -- TCS
 
-uniform float TessLevel = 16;
-
-layout(vertices = 3) out;
-in vec2 vPosition[];
-out vec2 tcPosition[];
-
+in vec2 vGridCoord[];
+layout(vertices = 4) out;
+patch out vec2 tcGridCoord;
 void main()
 {
-    tcPosition[gl_InvocationID] = vPosition[gl_InvocationID];
-    gl_TessLevelInner[0] = gl_TessLevelOuter[0] =
-    gl_TessLevelOuter[1] = gl_TessLevelOuter[2] = TessLevel;
+    tcGridCoord = vGridCoord[gl_InvocationID];
+    gl_TessLevelInner[0] = gl_TessLevelInner[1] =
+    gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = 
+    gl_TessLevelOuter[2] = gl_TessLevelOuter[3] = 128;
 }
 
 -- TES
 
-layout(triangles, equal_spacing, ccw) in;
+layout(quads, equal_spacing, cw) in;
 
-in vec2 tcPosition[];
+patch in vec2 tcGridCoord;
 out vec3 tePosition;
 out vec3 teNormal;
 uniform mat4 Projection;
@@ -35,14 +32,23 @@ uniform mat4 Modelview;
 
 const float R = 1.5;
 const float r = 0.25;
-
-// Ridge frequency and height:
 const float f = 20;
 const float h = 0.05;
+const float Pi = 4*atan(1);
 
 subroutine vec3 ParametricFunction(float u, float v);
 subroutine uniform ParametricFunction SurfaceFunc;
 subroutine uniform ParametricFunction NormalFunc;
+
+void main()
+{
+    vec2 uv = (tcGridCoord + gl_TessCoord.xy) / 16.0;
+    uv.y = 1 - uv.y;
+    vec2 p = uv * 2 * Pi;
+    tePosition = SurfaceFunc(p.x, p.y);
+    teNormal = NormalFunc(p.x, p.y);
+    gl_Position = Projection * Modelview * vec4(tePosition, 1);
+}
 
 // Simple Torus
 subroutine(ParametricFunction)
@@ -78,19 +84,6 @@ vec3 RidgedTorusNormal(float u, float v)
     float y = f*h*(h*sin(f*u) + r)*cos(u)*pow(cos(v), 2)*cos(f*u) - f*h*(h*sin(f*u) + r)*cos(u)*cos(f*u) + (-h*sin(f*u) - r)*(-R*sin(u) + f*h*cos(u)*cos(v)*cos(f*u) + (-h*sin(f*u) - r)*sin(u)*cos(v))*cos(v);
     float z = (-h*sin(f*u) - r)*(-R*sin(u) + f*h*cos(u)*cos(v)*cos(f*u) + (-h*sin(f*u) - r)*sin(u)*cos(v))*sin(u)*sin(v) + (h*sin(f*u) + r)*(R*cos(u) + f*h*sin(u)*cos(v)*cos(f*u) + (h*sin(f*u) + r)*cos(u)*cos(v))*sin(v)*cos(u);
     return normalize(vec3(x, y, z));
-}
-
-void main()
-{
-    vec2 p0 = gl_TessCoord.x * tcPosition[0];
-    vec2 p1 = gl_TessCoord.y * tcPosition[1];
-    vec2 p2 = gl_TessCoord.z * tcPosition[2];
-    vec2 p = (p0 + p1 + p2);
-
-    tePosition = SurfaceFunc(p.x, p.y);
-    teNormal = NormalFunc(p.x, p.y);
-
-    gl_Position = Projection * Modelview * vec4(tePosition, 1);
 }
 
 -- GS
