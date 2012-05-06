@@ -15,7 +15,7 @@ def VVF(*args):
 def DVVF(m, variable):
     return m.applyfunc(lambda f: diff(f,variable))
 def Simplify(m):
-    m.simplify()
+#    m.simplify()
     return m
 def Normalized(m):
     m = Simplify(m)
