@@ -20,9 +20,9 @@ def CircleYZ(radius):
     return VVF(0, -radius*cos(v), radius*sin(v))
 
 def SuperellipseYZ(n, a, b):
-    x = Abs(cos(v)) ** 2/n * a * sign(cos(v))
-    y = Abs(sin(v)) ** 2/n * b * sign(sin(v))
-    return VVF(0, x, y)
+    x = (Abs(cos(v)) ** (2/n)) * a * sign(cos(v))
+    y = (Abs(sin(v)) ** (2/n)) * b * sign(sin(v))
+    return VVF(0, -x, y)
 
 # Rotates the given vector-valued function along the X-axis
 def RotateX(f, q):
@@ -38,7 +38,7 @@ r, R = symbols('r R', positive=True)
 h, f = symbols('h f')
 
 # Torus
-if True:
+if False:
     sweepCurve = VVF(R*cos(u), R*sin(u), 0)
     crossSection = CircleYZ(r)
     surface = Sweep(sweepCurve, crossSection)
@@ -49,7 +49,7 @@ if True:
     PrintDivider()
 
 # Torus with Meridian Ridges
-if True:
+if False:
     crossSection = CircleYZ(r + h*sin(u*f))
     surface = Sweep(sweepCurve, crossSection)
     normals = NormalFunc(surface)
@@ -58,28 +58,27 @@ if True:
     PrintDivider()
 
 # Torus with a superellipse cross-section
-if True:
+# sympy has trouble with derivatives when Abs is involved
+if False:
     sweepCurve = VVF(R*cos(u), R*sin(u), 0)
-    crossSection = SuperellipseYZ(4, 1, 1)
+    n = symbols('n')
+    crossSection = SuperellipseYZ(n, 0.5, 0.5)
     surface = Sweep(sweepCurve, crossSection)
-    normals = NormalFunc(surface)
     print
     Print('Superellipse Torus Surface', surface)
-    Print('Superellipse Torus Normals', normals)
     PrintDivider()
 
 # Superellipse Mobius
-if True:
+# sympy has trouble with derivatives when Abs is involved
+if False:
     sweepCurve = VVF(R*cos(u), R*sin(u), 0)
-    crossSection = SuperellipseYZ(4, 1, 0.25) # b = 0.25 causes squishness.
-    crossSection = RotateX(crossSection, v * 2)
+    n = symbols('n')
+    crossSection = SuperellipseYZ(n, 0.5, 0.125)
+    crossSection = RotateX(crossSection, u / 2)
     surface = Sweep(sweepCurve, crossSection)
-    normals = NormalFunc(surface)
     print
     Print('Superellipse Mobius Surface', surface)
-    Print('Superellipse Mobius Normals', normals)
     PrintDivider()
-
 
 # Trefoil that lies on the torus (r-2)^2 + z^2 = 1
 # Causes infinite recursion in sympy...

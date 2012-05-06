@@ -94,12 +94,18 @@ void PezRender()
     // Pick the two subroutines:
     GLuint indices[2];
     float time = fmod(Scene.Time, 5);
-    if (time < 2.5) {
+    if (time < 1) {
         indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SimpleTorusSurface");
         indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "SimpleTorusNormal");
-    } else {
+    } else if (time < 2) {
         indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "RidgedTorusSurface");
         indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "RidgedTorusNormal");
+   } else if (time < 3) {
+        indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SuperellipseTorusSurface");
+        indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "SuperellipseTorusNormal");
+    } else {
+        indices[surfaceFunc] = glGetSubroutineIndex(prog, stage, "SuperellipseMobiusSurface");
+        indices[normalFunc]  = glGetSubroutineIndex(prog, stage, "SuperellipseMobiusNormal");
     }
     glUniformSubroutinesuiv(stage, 2, indices);
 

@@ -17,7 +17,7 @@ void main()
     tcGridCoord = vGridCoord[gl_InvocationID];
     gl_TessLevelInner[0] = gl_TessLevelInner[1] =
     gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = 
-    gl_TessLevelOuter[2] = gl_TessLevelOuter[3] = 128;
+    gl_TessLevelOuter[2] = gl_TessLevelOuter[3] = 32;
 }
 
 -- TES
@@ -35,6 +35,7 @@ const float r = 0.25;
 const float f = 20;
 const float h = 0.05;
 const float Pi = 4*atan(1);
+const float n = 3;
 
 subroutine vec3 ParametricFunction(float u, float v);
 subroutine uniform ParametricFunction SurfaceFunc;
@@ -86,6 +87,38 @@ vec3 RidgedTorusNormal(float u, float v)
     return normalize(vec3(x, y, z));
 }
 
+// Superellipse Torus
+subroutine(ParametricFunction)
+vec3 SuperellipseTorusSurface(float u, float v)
+{
+    u /= 2; // <-- cut in half
+    float x = (1.0*R + 0.5*pow(abs(cos(v)), 2/n)*sign(cos(v)))*cos(u);
+    float y = (1.0*R + 0.5*pow(abs(cos(v)), 2/n)*sign(cos(v)))*sin(u);
+    float z = 0.5*pow(abs(sin(v)), 2/n)*sign(sin(v));
+    return vec3(x, y, z);
+}
+subroutine(ParametricFunction)
+vec3 SuperellipseTorusNormal(float u, float v)
+{
+    return vec3(0, 0, 0); // TODO use forward differencing
+}
+
+// Superellipse Mobius
+subroutine(ParametricFunction)
+vec3 SuperellipseMobiusSurface(float u, float v)
+{
+    u /= 2; // <-- cut in half
+    float x = (1.0*R + 0.125*sin(u/2)*pow(abs(sin(v)), 2/n)*sign(sin(v)) + 0.5*cos(u/2)*pow(abs(cos(v)), 2/n)*sign(cos(v)))*cos(u);
+    float y = (1.0*R + 0.125*sin(u/2)*pow(abs(sin(v)), 2/n)*sign(sin(v)) + 0.5*cos(u/2)*pow(abs(cos(v)), 2/n)*sign(cos(v)))*sin(u);
+    float z = -0.5*sin(u/2)*pow(abs(cos(v)), 2/n)*sign(cos(v)) + 0.125*cos(u/2)*pow(abs(sin(v)), 2/n)*sign(sin(v));
+    return vec3(x, y, z);
+}
+subroutine(ParametricFunction)
+vec3  SuperellipseMobiusNormal(float u, float v)
+{
+    return vec3(0, 0, 0); // TODO use forward differencing
+}
+
 -- GS
 
 out vec3 gNormal;
@@ -98,12 +131,16 @@ layout(triangle_strip, max_vertices = 3) out;
 
 void main()
 {
+    vec3 A = tePosition[0];
+    vec3 B = tePosition[1];
+    vec3 C = tePosition[2];
+    gNormal = NormalMatrix * normalize(cross(B - A, C - A));
+
     for (int i = 0; i < 3; i++) {
-        gNormal = NormalMatrix * teNormal[i];
+        //gNormal = NormalMatrix * teNormal[i];
         gl_Position = gl_in[i].gl_Position;
         EmitVertex();
     }
-
     EndPrimitive();
 }
 
