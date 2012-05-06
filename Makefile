@@ -2,16 +2,13 @@ CC=gcc
 CFLAGS=-std=c99 -Wall -c -Wc++-compat -O3 -fextended-identifiers
 LIBS=-lX11 -lGL -lpng
 DEMOS=\
-	Spiral-Jacob \
-	Spiral-Simple \
-	Spiral-Wavy \
-	Torus \
+	Surfaces \
 
 SHARED=pez.o bstrlib.o pez.linux.o
 PREFIX=
 
-run: Torus
-	./Torus
+run: Surfaces
+	./Surfaces
 
 all: $(DEMOS)
 
