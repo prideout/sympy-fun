@@ -121,7 +121,7 @@ void PezRender()
     }
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     glPatchParameteri(GL_PATCH_VERTICES, 4);
-    glDrawArrays(GL_PATCHES, 0, 256 * 4);
+    glDrawArrays(GL_PATCHES, 0, 4);
 
     // Record a screenshot if desired:
     if (takeScreenshot) {

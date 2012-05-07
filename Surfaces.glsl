@@ -1,30 +1,20 @@
 -- VS
 
-out vec2 vGridCoord;
-void main()
-{
-    int i = gl_VertexID / 4;
-    vGridCoord = vec2(i / 16, i % 16);
-}
+void main() {}
 
 -- TCS
 
-in vec2 vGridCoord[];
 layout(vertices = 4) out;
-patch out vec2 tcGridCoord;
-void main()
-{
-    tcGridCoord = vGridCoord[gl_InvocationID];
+void main() {
     gl_TessLevelInner[0] = gl_TessLevelInner[1] =
     gl_TessLevelOuter[0] = gl_TessLevelOuter[1] = 
-    gl_TessLevelOuter[2] = gl_TessLevelOuter[3] = 32;
+    gl_TessLevelOuter[2] = gl_TessLevelOuter[3] = 128;
 }
 
 -- TES
 
-layout(quads, equal_spacing, cw) in;
+layout(quads, equal_spacing, ccw) in;
 
-patch in vec2 tcGridCoord;
 out vec3 tePosition;
 out vec3 teNormal;
 uniform mat4 Projection;
@@ -42,17 +32,14 @@ subroutine uniform ParametricFunction SurfaceFunc;
 
 void main()
 {
-    vec2 uv = (tcGridCoord + gl_TessCoord.xy) / 16.0;
-    uv.y = 1 - uv.y;
+    vec2 uv = gl_TessCoord.xy;
     vec2 p = uv * 2 * Pi;
     tePosition = SurfaceFunc(p.x, p.y);
-
     float du = 0.0001; float dv = 0.0001;
     vec3 C = SurfaceFunc(p.x + du, p.y);
     vec3 B = SurfaceFunc(p.x, p.y + dv);
     vec3 A = tePosition;
     teNormal = normalize(cross(C - A, B - A));
-
     gl_Position = Projection * Modelview * vec4(tePosition, 1);
 }
 
